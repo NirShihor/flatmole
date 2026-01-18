@@ -1,66 +1,103 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client'
 
-export default function Home() {
+import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import styles from './page.module.css'
+
+declare global {
+  interface Window {
+    google: typeof google
+  }
+}
+
+export default function HomePage() {
+  const router = useRouter()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [scriptLoaded, setScriptLoaded] = useState(false)
+
+  useEffect(() => {
+    if (window.google?.maps?.places) {
+      setScriptLoaded(true)
+      return
+    }
+
+    const existingScript = document.querySelector('script[src*="maps.googleapis.com"]')
+    if (existingScript) {
+      existingScript.addEventListener('load', () => setScriptLoaded(true))
+      return
+    }
+
+    const script = document.createElement('script')
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY}&libraries=places`
+    script.async = true
+    script.onload = () => setScriptLoaded(true)
+    document.head.appendChild(script)
+  }, [])
+
+  useEffect(() => {
+    if (!scriptLoaded || !inputRef.current || autocompleteRef.current) return
+
+    autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
+      types: ['address'],
+      componentRestrictions: { country: 'gb' },
+    })
+
+    autocompleteRef.current.addListener('place_changed', handlePlaceSelect)
+  }, [scriptLoaded])
+
+  const handlePlaceSelect = async () => {
+    const place = autocompleteRef.current?.getPlace()
+
+    if (!place || !place.place_id) return
+
+    setLoading(true)
+
+    try {
+      const res = await fetch('/api/listings/find-or-create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          placeId: place.place_id,
+          formatted: place.formatted_address,
+          addressComponents: place.address_components,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (data.success && data.listingId) {
+        router.push(`/listing/${data.listingId}`)
+      }
+    } catch (error) {
+      console.error('Error finding/creating listing:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
-    <div className={styles.page}>
+    <div className={styles.container}>
       <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+        <h1 className={styles.title}>Flatmole</h1>
+        <p className={styles.subtitle}>Review your rental property and landlord</p>
+
+        <div className={styles.searchContainer}>
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder="Enter a UK address..."
+            className={styles.searchInput}
+            disabled={loading}
+          />
+          {loading && <p className={styles.loading}>Loading...</p>}
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+        <p className={styles.hint}>
+          Search for an address to read or write reviews
+        </p>
       </main>
     </div>
-  );
+  )
 }

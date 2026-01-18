@@ -1,0 +1,96 @@
+.container {
+  min-height: calc(100vh - 60px);
+  display: flex;
+  background-color: #f5f5f5;
+}
+
+.sidebar {
+  width: 240px;
+  background: white;
+  border-right: 1px solid #eee;
+  padding: 2rem 0;
+  flex-shrink: 0;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.navLink {
+  padding: 0.75rem 1.5rem;
+  color: #666;
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.navLink:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.navLinkActive {
+  background-color: #f0f7ff;
+  color: #0070f3;
+  border-right: 2px solid #0070f3;
+}
+
+.main {
+  flex: 1;
+  padding: 2rem;
+  max-width: 900px;
+}
+
+.card {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.primaryButton {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background-color: #0070f3;
+  color: white;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+  margin-top: 1rem;
+}
+
+.primaryButton:hover {
+  background-color: #0060df;
+}
+
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #eee;
+    padding: 1rem 0;
+  }
+
+  .nav {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .navLink {
+    white-space: nowrap;
+  }
+
+  .navLinkActive {
+    border-right: none;
+    border-bottom: 2px solid #0070f3;
+  }
+
+  .main {
+    padding: 1rem;
+  }
+}
