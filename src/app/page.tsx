@@ -12,8 +12,19 @@ declare global {
   }
 }
 
-// UK postcode regex - matches formats like "SW1A 1AA", "M1 1AA", "EH3 9DR", etc.
+// UK postcode regex - matches formats like "SW1A 1AA", "M1 1AA", "EH3 9DR", "EH42EQ" etc.
 const UK_POSTCODE_REGEX = /^([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})$/i
+
+// Format a UK postcode with proper spacing (e.g., "EH42EQ" -> "EH4 2EQ")
+function formatPostcode(postcode: string): string {
+  const cleaned = postcode.replace(/\s/g, '').toUpperCase()
+  // UK postcodes always have the last 3 characters as: digit + 2 letters
+  // So insert a space before the last 3 characters
+  if (cleaned.length >= 5) {
+    return cleaned.slice(0, -3) + ' ' + cleaned.slice(-3)
+  }
+  return cleaned
+}
 
 const exampleReviews = [
   {
@@ -117,7 +128,7 @@ export default function HomePage() {
     // Check if it's a postcode
     const trimmed = value.trim()
     if (UK_POSTCODE_REGEX.test(trimmed)) {
-      setPostcode(trimmed.toUpperCase())
+      setPostcode(formatPostcode(trimmed))
       setPostcodeMode(true)
     }
   }
@@ -158,8 +169,8 @@ export default function HomePage() {
     setLoading(true)
 
     try {
-      // Construct the full address query
-      const fullAddress = `${houseNumber.trim()} ${postcode}, UK`
+      // Construct the full address query with properly formatted postcode
+      const fullAddress = `${houseNumber.trim()}, ${postcode}, UK`
 
       // Use Google Places text search to find the address
       const service = new google.maps.places.PlacesService(document.createElement('div'))
@@ -182,6 +193,20 @@ export default function HomePage() {
               },
               async (place, detailsStatus) => {
                 if (detailsStatus === google.maps.places.PlacesServiceStatus.OK && place) {
+                  // Verify the returned address contains the correct postcode
+                  const returnedPostcode = place.address_components?.find(
+                    (c) => c.types.includes('postal_code')
+                  )?.long_name?.replace(/\s/g, '').toUpperCase()
+
+                  const searchedPostcode = postcode.replace(/\s/g, '').toUpperCase()
+
+                  if (returnedPostcode && returnedPostcode !== searchedPostcode) {
+                    alert(`Could not find an exact match for ${houseNumber.trim()} at ${postcode}. Please try entering the full address.`)
+                    resetSearch()
+                    setLoading(false)
+                    return
+                  }
+
                   try {
                     const res = await fetch('/api/listings/find-or-create', {
                       method: 'POST',
