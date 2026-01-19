@@ -66,8 +66,8 @@ export async function POST(
                 : listing.createdAt,
               releasedAt: now,
             },
-          } as Record<string, unknown>,
-        }
+          },
+        } as any
       )
     } else {
       await db.collection('listings').updateOne(
@@ -79,8 +79,8 @@ export async function POST(
               userId: user._id,
               claimedAt: now,
             },
-          } as Record<string, unknown>,
-        }
+          },
+        } as any
       )
     }
 
