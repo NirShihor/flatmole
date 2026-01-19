@@ -46,6 +46,7 @@ async function getListing(id: string) {
       ...listing,
       _id: listing._id.toString(),
       currentClaimant: listing.currentClaimant?.toString() || null,
+      hasPaidFeatures: listing.hasPaidFeatures || false,
     },
     reviews: reviews.map(r => ({
       _id: r._id.toString(),
