@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ObjectId } from 'mongodb'
 import { auth } from '@/lib/auth'
 import clientPromise from '@/lib/mongoClient'
-import { stripe, PRICE_AMOUNT, PRICE_CURRENCY } from '@/lib/stripe'
+import { getStripe, PRICE_AMOUNT, PRICE_CURRENCY } from '@/lib/stripe'
 
 export async function POST(request: NextRequest) {
   try {
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3001'
 
-    const checkoutSession = await stripe.checkout.sessions.create({
+    const checkoutSession = await getStripe().checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
       line_items: [
