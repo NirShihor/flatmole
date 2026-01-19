@@ -194,13 +194,15 @@ export default function HomePage() {
               async (place, detailsStatus) => {
                 if (detailsStatus === google.maps.places.PlacesServiceStatus.OK && place) {
                   // Verify the returned address contains the correct postcode
-                  const returnedPostcode = place.address_components?.find(
-                    (c) => c.types.includes('postal_code')
-                  )?.long_name?.replace(/\s/g, '').toUpperCase()
+                  // Check the formatted address for the postcode (more reliable)
+                  const formattedAddress = place.formatted_address?.toUpperCase() || ''
+                  const searchedPostcodeNoSpace = postcode.replace(/\s/g, '').toUpperCase()
+                  const searchedPostcodeWithSpace = postcode.toUpperCase()
 
-                  const searchedPostcode = postcode.replace(/\s/g, '').toUpperCase()
+                  const postcodeFound = formattedAddress.includes(searchedPostcodeNoSpace) ||
+                                        formattedAddress.includes(searchedPostcodeWithSpace)
 
-                  if (returnedPostcode && returnedPostcode !== searchedPostcode) {
+                  if (!postcodeFound) {
                     alert(`Could not find an exact match for ${houseNumber.trim()} at ${postcode}. Please try entering the full address.`)
                     resetSearch()
                     setLoading(false)
