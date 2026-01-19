@@ -12,6 +12,9 @@ declare global {
   }
 }
 
+// UK postcode regex - matches formats like "SW1A 1AA", "M1 1AA", "EH3 9DR", etc.
+const UK_POSTCODE_REGEX = /^([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})$/i
+
 const exampleReviews = [
   {
     stars: 4,
@@ -56,9 +59,14 @@ function StarRating({ rating }: { rating: number }) {
 export default function HomePage() {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
+  const houseNumberRef = useRef<HTMLInputElement>(null)
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null)
   const [loading, setLoading] = useState(false)
   const [scriptLoaded, setScriptLoaded] = useState(false)
+  const [postcodeMode, setPostcodeMode] = useState(false)
+  const [postcode, setPostcode] = useState('')
+  const [houseNumber, setHouseNumber] = useState('')
+  const [searchValue, setSearchValue] = useState('')
 
   useEffect(() => {
     if (window.google?.maps?.places) {
@@ -80,7 +88,12 @@ export default function HomePage() {
   }, [])
 
   useEffect(() => {
-    if (!scriptLoaded || !inputRef.current || autocompleteRef.current) return
+    if (!scriptLoaded || !inputRef.current || postcodeMode) return
+
+    // Clean up previous autocomplete
+    if (autocompleteRef.current) {
+      google.maps.event.clearInstanceListeners(autocompleteRef.current)
+    }
 
     autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
       types: ['address'],
@@ -88,7 +101,26 @@ export default function HomePage() {
     })
 
     autocompleteRef.current.addListener('place_changed', handlePlaceSelect)
-  }, [scriptLoaded])
+  }, [scriptLoaded, postcodeMode])
+
+  // Focus house number input when postcode mode is activated
+  useEffect(() => {
+    if (postcodeMode && houseNumberRef.current) {
+      houseNumberRef.current.focus()
+    }
+  }, [postcodeMode])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setSearchValue(value)
+
+    // Check if it's a postcode
+    const trimmed = value.trim()
+    if (UK_POSTCODE_REGEX.test(trimmed)) {
+      setPostcode(trimmed.toUpperCase())
+      setPostcodeMode(true)
+    }
+  }
 
   const handlePlaceSelect = async () => {
     const place = autocompleteRef.current?.getPlace()
@@ -120,6 +152,81 @@ export default function HomePage() {
     }
   }
 
+  const handlePostcodeSearch = async () => {
+    if (!houseNumber.trim()) return
+
+    setLoading(true)
+
+    try {
+      // Construct the full address query
+      const fullAddress = `${houseNumber.trim()} ${postcode}, UK`
+
+      // Use Google Places text search to find the address
+      const service = new google.maps.places.PlacesService(document.createElement('div'))
+
+      service.findPlaceFromQuery(
+        {
+          query: fullAddress,
+          fields: ['place_id', 'formatted_address', 'address_components'],
+        },
+        async (results, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && results && results[0]) {
+            const place = results[0]
+
+            try {
+              const res = await fetch('/api/listings/find-or-create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  placeId: place.place_id,
+                  formatted: place.formatted_address,
+                  addressComponents: place.address_components,
+                }),
+              })
+
+              const data = await res.json()
+
+              if (data.success && data.listingId) {
+                router.push(`/listing/${data.listingId}`)
+              } else {
+                alert('Could not find this address. Please try entering the full address.')
+                resetSearch()
+              }
+            } catch (error) {
+              console.error('Error finding/creating listing:', error)
+              resetSearch()
+            }
+          } else {
+            alert('Could not find this address. Please try entering the full address.')
+            resetSearch()
+          }
+          setLoading(false)
+        }
+      )
+    } catch (error) {
+      console.error('Error searching:', error)
+      setLoading(false)
+      resetSearch()
+    }
+  }
+
+  const resetSearch = () => {
+    setPostcodeMode(false)
+    setPostcode('')
+    setHouseNumber('')
+    setSearchValue('')
+    if (inputRef.current) {
+      inputRef.current.value = ''
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && postcodeMode && houseNumber.trim()) {
+      e.preventDefault()
+      handlePostcodeSearch()
+    }
+  }
+
   return (
     <div className={styles.container}>
       <section className={styles.hero}>
@@ -139,18 +246,55 @@ export default function HomePage() {
             and see landlord responses
           </p>
 
-          <div className={styles.searchContainer}>
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder="Enter an address or postcode..."
-              className={styles.searchInput}
-              disabled={loading}
-            />
-            <button className={styles.searchButton} disabled={loading}>
-              {loading ? '...' : 'Search'}
-            </button>
-          </div>
+          {!postcodeMode ? (
+            <div className={styles.searchContainer}>
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="Enter an address or postcode..."
+                className={styles.searchInput}
+                disabled={loading}
+                onChange={handleInputChange}
+                value={searchValue}
+              />
+              <button className={styles.searchButton} disabled={loading}>
+                {loading ? '...' : 'Search'}
+              </button>
+            </div>
+          ) : (
+            <div className={styles.postcodeSearchContainer}>
+              <div className={styles.postcodeDisplay}>
+                <span className={styles.postcodeLabel}>Postcode:</span>
+                <span className={styles.postcodeValue}>{postcode}</span>
+                <button
+                  type="button"
+                  onClick={resetSearch}
+                  className={styles.changeButton}
+                >
+                  Change
+                </button>
+              </div>
+              <div className={styles.searchContainer}>
+                <input
+                  ref={houseNumberRef}
+                  type="text"
+                  placeholder="House/flat number (e.g. 12 or Flat 3)"
+                  className={styles.searchInput}
+                  disabled={loading}
+                  value={houseNumber}
+                  onChange={(e) => setHouseNumber(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                />
+                <button
+                  className={styles.searchButton}
+                  disabled={loading || !houseNumber.trim()}
+                  onClick={handlePostcodeSearch}
+                >
+                  {loading ? '...' : 'Search'}
+                </button>
+              </div>
+            </div>
+          )}
 
           <p className={styles.features}>
             <span>Anonymous posting</span>

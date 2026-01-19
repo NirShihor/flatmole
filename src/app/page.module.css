@@ -80,6 +80,47 @@
   cursor: not-allowed;
 }
 
+/* Postcode search mode */
+.postcodeSearchContainer {
+  max-width: 450px;
+  margin-bottom: 1rem;
+}
+
+.postcodeDisplay {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background-color: #f5f5f5;
+  border-radius: 6px;
+}
+
+.postcodeLabel {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.postcodeValue {
+  font-weight: 600;
+  color: #333;
+}
+
+.changeButton {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #0070f3;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-family: inherit;
+  padding: 0.25rem 0.5rem;
+}
+
+.changeButton:hover {
+  text-decoration: underline;
+}
+
 .features {
   font-size: 1.35rem;
   color: #666;
