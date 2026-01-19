@@ -401,6 +401,59 @@
   font-weight: 500;
 }
 
+.upgradeSection {
+  margin-bottom: 2rem;
+}
+
+.upgradeCard {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  padding: 1.5rem;
+  color: white;
+  text-align: center;
+}
+
+.upgradeTitle {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.upgradeDesc {
+  margin: 0 0 0.75rem;
+  opacity: 0.9;
+  font-size: 0.875rem;
+}
+
+.upgradePrice {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.upgradeButton {
+  padding: 0.75rem 2rem;
+  background-color: white;
+  color: #764ba2;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.upgradeButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.upgradeButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
 @media (max-width: 600px) {
   .main {
     padding: 1rem;

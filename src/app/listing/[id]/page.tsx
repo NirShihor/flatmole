@@ -5,6 +5,7 @@ import clientPromise from '@/lib/mongoClient'
 import { auth } from '@/lib/auth'
 import styles from './listing.module.css'
 import ReviewsList from './ReviewsList'
+import UpgradeButton from './UpgradeButton'
 
 interface ListingPageProps {
   params: Promise<{ id: string }>
@@ -133,6 +134,10 @@ export default async function ListingPage({ params }: ListingPageProps) {
             {isClaimed ? 'Claim this Property' : 'Claim this Property'}
           </Link>
         </div>
+
+        {isOwner && !listing.hasPaidFeatures && (
+          <UpgradeButton listingId={id} />
+        )}
 
         <section className={styles.reviewsSection}>
           <h2 className={styles.reviewsTitle}>Reviews</h2>

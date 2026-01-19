@@ -17,6 +17,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Flatmole",
   description: "Review your landlord and property",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/images/favicon/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({

@@ -91,16 +91,27 @@ export default function SignupPage() {
           <span>or</span>
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
+        <form
+          onSubmit={handleSubmit}
+          className={styles.form}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !loading) {
+              e.preventDefault()
+              handleSubmit(e)
+            }
+          }}
+        >
           {error && <p className={styles.error}>{error}</p>}
 
           <div className={styles.field}>
             <label htmlFor="name">Name</label>
             <input
               id="name"
+              name="name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              autoComplete="name"
               placeholder="Your name"
             />
           </div>
@@ -109,10 +120,12 @@ export default function SignupPage() {
             <label htmlFor="email">Email</label>
             <input
               id="email"
+              name="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
               placeholder="you@example.com"
             />
           </div>
@@ -121,10 +134,12 @@ export default function SignupPage() {
             <label htmlFor="password">Password</label>
             <input
               id="password"
+              name="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="new-password"
               placeholder="At least 8 characters"
             />
           </div>
@@ -133,10 +148,12 @@ export default function SignupPage() {
             <label htmlFor="confirmPassword">Confirm Password</label>
             <input
               id="confirmPassword"
+              name="confirmPassword"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
+              autoComplete="new-password"
               placeholder="Confirm your password"
             />
           </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useSession, signOut } from 'next-auth/react'
 import styles from './Navbar.module.css'
 
@@ -11,7 +12,15 @@ export default function Navbar() {
     <nav className={styles.navbar}>
       <div className={styles.container}>
         <Link href="/" className={styles.logo}>
-          Flatmole
+          <Image
+            src="/images/flatmole_logo_v4.png"
+            alt="Flatmole"
+            width={0}
+            height={0}
+            sizes="100vw"
+            style={{ width: 'auto', height: '82px' }}
+            priority
+          />
         </Link>
 
         <div className={styles.links}>

@@ -1,71 +1,346 @@
 .container {
-  min-height: calc(100vh - 60px);
+  min-height: 100vh;
+  background-color: #fafafa;
+}
+
+/* Hero Section */
+.hero {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 2rem 4rem;
+  gap: 2rem;
 }
 
-.main {
-  text-align: center;
-  max-width: 600px;
+.heroContent {
+  flex: 1;
+  max-width: 520px;
+}
+
+.heroHeading {
   width: 100%;
+  max-width: 500px;
+  height: auto;
+  margin-bottom: 1rem;
 }
 
-.title {
-  font-size: 3rem;
-  font-weight: 700;
-  color: white;
-  margin: 0 0 0.5rem;
-}
-
-.subtitle {
-  font-size: 1.25rem;
-  color: rgba(255, 255, 255, 0.9);
-  margin: 0 0 2rem;
+.subheadline {
+  font-size: 1.5rem;
+  color: #555;
+  line-height: 1.5;
+  margin: 0 0 1.5rem;
 }
 
 .searchContainer {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1rem;
+  max-width: 450px;
   position: relative;
+  z-index: 10;
 }
 
 .searchInput {
-  width: 100%;
-  padding: 1rem 1.5rem;
-  font-size: 1.125rem;
-  border: none;
-  border-radius: 50px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  outline: none;
-  transition: box-shadow 0.2s;
+  flex: 1;
+  padding: 0.875rem 1rem;
+  border: 1px solid #ddd;
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+  font-family: inherit;
+  font-size: 1rem;
+  background: white;
+  color: #333;
 }
 
 .searchInput:focus {
-  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.25);
+  outline: none;
+  border-color: #999;
 }
 
-.searchInput::placeholder {
-  color: #999;
+.searchButton {
+  padding: 0.875rem 1.5rem;
+  background-color: #333;
+  color: white;
+  border: none;
+  border-radius: 0 6px 6px 0;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-.searchInput:disabled {
-  background-color: #f5f5f5;
+.searchButton:hover {
+  background-color: #222;
+}
+
+.searchButton:disabled {
+  background-color: #999;
   cursor: not-allowed;
 }
 
-.loading {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 1rem;
-  color: white;
-  font-size: 0.875rem;
+.features {
+  font-size: 1.35rem;
+  color: #666;
+  margin: 0 0 1rem;
+  white-space: nowrap;
 }
 
-.hint {
-  margin-top: 1.5rem;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.875rem;
+.dot {
+  margin: 0 0.5rem;
+}
+
+.writeReviewLink {
+  color: #333;
+  text-decoration: underline;
+  font-size: 1.35rem;
+}
+
+.writeReviewLink:hover {
+  color: #000;
+}
+
+.heroImage {
+  flex-shrink: 0;
+}
+
+.heroImage img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* How It Works + Fair Platform Section */
+.howItWorks {
+  background-color: #f0f0f0;
+  padding: 3rem 2rem;
+}
+
+.howItWorksInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.reviewsColumn {
+  display: flex;
+  flex-direction: column;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 1.5rem;
+}
+
+.reviewCards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.reviewCard {
+  background: white;
+  border-radius: 8px;
+  padding: 1.25rem;
+  border: 1px solid #e5e5e5;
+}
+
+.stars {
+  color: #333;
+  font-size: 1rem;
+  letter-spacing: 1px;
+}
+
+.reviewTitle {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0.5rem 0;
+}
+
+.reviewContent {
+  font-size: 0.9375rem;
+  color: #555;
+  line-height: 1.5;
+  margin: 0 0 0.75rem;
+}
+
+.reviewMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8125rem;
+  color: #888;
+}
+
+.landlordBadge {
+  background-color: #f5f5f5;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+/* Fair Platform Section */
+.fairPlatform {
+  background-color: #fafafa;
+  border-radius: 8px;
+  padding: 1.5rem;
+  height: fit-content;
+  margin-top: 3.5rem;
+}
+
+.fairTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 1rem;
+}
+
+.fairDesc {
+  font-size: 1rem;
+  color: #555;
+  line-height: 1.6;
+  margin: 0 0 1rem;
+}
+
+.fairList {
+  margin: 0 0 1.5rem;
+  padding-left: 1.25rem;
+  color: #333;
+}
+
+.fairList li {
+  margin-bottom: 0.5rem;
+}
+
+.fairButtons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.primaryButton {
+  padding: 0.75rem 1.25rem;
+  background-color: #333;
+  color: white;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.primaryButton:hover {
+  background-color: #222;
+}
+
+.secondaryButton {
+  padding: 0.75rem 1.25rem;
+  background-color: white;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.secondaryButton:hover {
+  border-color: #999;
+}
+
+/* Footer */
+.footer {
+  border-top: 1px solid #e5e5e5;
+  padding: 2rem;
+  background-color: #fafafa;
+}
+
+.footerContent {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footerLogo {
+  display: flex;
+  align-items: center;
+}
+
+.footerNav {
+  display: flex;
+  gap: 2rem;
+}
+
+.footerNav a {
+  color: #666;
+  text-decoration: none;
+  font-size: 0.9375rem;
+}
+
+.footerNav a:hover {
+  color: #333;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .hero {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .heroContent {
+    max-width: 100%;
+  }
+
+  .searchContainer {
+    max-width: 100%;
+  }
+
+  .heroImage {
+    order: -1;
+  }
+
+  .reviewCards {
+    grid-template-columns: 1fr;
+  }
+
+  .fairPlatform {
+    grid-template-columns: 1fr;
+  }
+
+  .fairTitle,
+  .fairDesc,
+  .fairList,
+  .fairButtons {
+    grid-column: 1;
+  }
+
+  .fairTitle { grid-row: 1; }
+  .fairDesc { grid-row: 2; }
+  .fairList { grid-row: 3; }
+  .fairButtons { grid-row: 4; }
+
+  .fairButtons {
+    flex-direction: column;
+  }
+
+  .footerContent {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .footerNav {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+  }
 }
