@@ -43,8 +43,8 @@ async function getListing(id: string) {
 
   return {
     listing: {
-      ...listing,
       _id: listing._id.toString(),
+      address: listing.address,
       currentClaimant: listing.currentClaimant?.toString() || null,
       hasPaidFeatures: listing.hasPaidFeatures || false,
     },
