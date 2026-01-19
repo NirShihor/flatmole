@@ -193,22 +193,6 @@ export default function HomePage() {
               },
               async (place, detailsStatus) => {
                 if (detailsStatus === google.maps.places.PlacesServiceStatus.OK && place) {
-                  // Verify the returned address contains the correct postcode
-                  // Check the formatted address for the postcode (more reliable)
-                  const formattedAddress = place.formatted_address?.toUpperCase() || ''
-                  const searchedPostcodeNoSpace = postcode.replace(/\s/g, '').toUpperCase()
-                  const searchedPostcodeWithSpace = postcode.toUpperCase()
-
-                  const postcodeFound = formattedAddress.includes(searchedPostcodeNoSpace) ||
-                                        formattedAddress.includes(searchedPostcodeWithSpace)
-
-                  if (!postcodeFound) {
-                    alert(`Could not find an exact match for ${houseNumber.trim()} at ${postcode}. Please try entering the full address.`)
-                    resetSearch()
-                    setLoading(false)
-                    return
-                  }
-
                   try {
                     const res = await fetch('/api/listings/find-or-create', {
                       method: 'POST',
