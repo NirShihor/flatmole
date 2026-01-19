@@ -164,43 +164,59 @@ export default function HomePage() {
       // Use Google Places text search to find the address
       const service = new google.maps.places.PlacesService(document.createElement('div'))
 
+      // First, find the place
       service.findPlaceFromQuery(
         {
           query: fullAddress,
-          fields: ['place_id', 'formatted_address', 'address_components'],
+          fields: ['place_id', 'formatted_address'],
         },
         async (results, status) => {
           if (status === google.maps.places.PlacesServiceStatus.OK && results && results[0]) {
-            const place = results[0]
+            const placeId = results[0].place_id
 
-            try {
-              const res = await fetch('/api/listings/find-or-create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  placeId: place.place_id,
-                  formatted: place.formatted_address,
-                  addressComponents: place.address_components,
-                }),
-              })
+            // Then get full details including address_components
+            service.getDetails(
+              {
+                placeId: placeId!,
+                fields: ['place_id', 'formatted_address', 'address_components'],
+              },
+              async (place, detailsStatus) => {
+                if (detailsStatus === google.maps.places.PlacesServiceStatus.OK && place) {
+                  try {
+                    const res = await fetch('/api/listings/find-or-create', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        placeId: place.place_id,
+                        formatted: place.formatted_address,
+                        addressComponents: place.address_components,
+                      }),
+                    })
 
-              const data = await res.json()
+                    const data = await res.json()
 
-              if (data.success && data.listingId) {
-                router.push(`/listing/${data.listingId}`)
-              } else {
-                alert('Could not find this address. Please try entering the full address.')
-                resetSearch()
+                    if (data.success && data.listingId) {
+                      router.push(`/listing/${data.listingId}`)
+                    } else {
+                      alert('Could not find this address. Please try entering the full address.')
+                      resetSearch()
+                    }
+                  } catch (error) {
+                    console.error('Error finding/creating listing:', error)
+                    resetSearch()
+                  }
+                } else {
+                  alert('Could not find this address. Please try entering the full address.')
+                  resetSearch()
+                }
+                setLoading(false)
               }
-            } catch (error) {
-              console.error('Error finding/creating listing:', error)
-              resetSearch()
-            }
+            )
           } else {
             alert('Could not find this address. Please try entering the full address.')
             resetSearch()
+            setLoading(false)
           }
-          setLoading(false)
         }
       )
     } catch (error) {
