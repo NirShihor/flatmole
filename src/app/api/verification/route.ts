@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { listingId, documentData, documentType, documentName } = body
+    const { listingId, reviewId, documentData, documentType, documentName } = body
 
     if (!listingId || !ObjectId.isValid(listingId)) {
       return NextResponse.json(
@@ -226,6 +226,36 @@ If you cannot extract the information, set isValid to false and leave address/na
         message: 'The address on your document does not match this property. Please upload a document showing this address, or contact support if you believe this is an error.',
         extractedAddress: extractedData.address,
       })
+    }
+
+    // Verification successful - approve the review if reviewId was provided
+    if (reviewId && ObjectId.isValid(reviewId)) {
+      await db.collection('reviews').updateOne(
+        { _id: new ObjectId(reviewId), userId: user._id },
+        { $set: { status: 'approved', updatedAt: new Date() } }
+      )
+
+      // Update listing stats
+      const reviews = await db.collection('reviews').find({
+        listingId: new ObjectId(listingId),
+        status: 'approved',
+      }).toArray()
+
+      if (reviews.length > 0) {
+        const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0)
+        const averageRating = totalRating / reviews.length
+
+        await db.collection('listings').updateOne(
+          { _id: new ObjectId(listingId) },
+          {
+            $set: {
+              averageRating: Math.round(averageRating * 10) / 10,
+              reviewsCount: reviews.length,
+              updatedAt: new Date(),
+            },
+          }
+        )
+      }
     }
 
     return NextResponse.json({

@@ -270,3 +270,71 @@
 .privacyNote a {
   color: #0070f3;
 }
+
+/* Success message after review submission */
+.successMessage {
+  text-align: center;
+  padding: 1.5rem 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.successIcon {
+  width: 48px;
+  height: 48px;
+  background-color: #22c55e;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin: 0 auto 1rem;
+}
+
+.successTitle {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.successText {
+  margin: 0;
+  color: #666;
+}
+
+.skipLink {
+  display: block;
+  margin-top: 1.5rem;
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 0.875rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-align: center;
+  width: 100%;
+}
+
+.skipLink:hover {
+  color: #333;
+}
+
+.secondaryButton {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background-color: white;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.secondaryButton:hover {
+  border-color: #999;
+}

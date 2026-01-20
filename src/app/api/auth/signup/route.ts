@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import clientPromise from '@/lib/mongoClient'
+import { sendVerificationEmail, generateVerificationToken } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,18 +26,26 @@ export async function POST(request: NextRequest) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 12)
+    const verificationToken = generateVerificationToken()
+    const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
     const result = await db.collection('users').insertOne({
       email,
       password: hashedPassword,
       name: name || null,
+      emailVerified: false,
+      verificationToken,
+      verificationTokenExpiry: tokenExpiry,
       createdAt: new Date(),
       updatedAt: new Date(),
     })
 
+    // Send verification email (don't block on failure)
+    sendVerificationEmail(email, verificationToken).catch(console.error)
+
     return NextResponse.json({
       success: true,
-      message: 'User created successfully',
+      message: 'Account created. Please check your email to verify your account.',
       userId: result.insertedId.toString(),
     })
   } catch (error) {

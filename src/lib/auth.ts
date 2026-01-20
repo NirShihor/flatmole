@@ -37,12 +37,31 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           id: user._id.toString(),
           email: user.email,
           name: user.name,
+          isEmailVerified: user.emailVerified === true,
         }
       },
     }),
   ],
   session: {
     strategy: 'jwt',
+  },
+  callbacks: {
+    async jwt({ token, user, account }) {
+      if (user) {
+        token.isEmailVerified = (user as unknown as { isEmailVerified?: boolean }).isEmailVerified ?? false
+      }
+      // Google users are automatically verified
+      if (account?.provider === 'google') {
+        token.isEmailVerified = true
+      }
+      return token
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        (session.user as unknown as { isEmailVerified?: boolean }).isEmailVerified = token.isEmailVerified as boolean
+      }
+      return session
+    },
   },
   pages: {
     signIn: '/login',

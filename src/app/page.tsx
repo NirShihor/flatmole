@@ -77,7 +77,15 @@ export default function HomePage() {
   const [postcodeMode, setPostcodeMode] = useState(false)
   const [postcode, setPostcode] = useState('')
   const [houseNumber, setHouseNumber] = useState('')
+  const [flatNumber, setFlatNumber] = useState('')
   const [searchValue, setSearchValue] = useState('')
+  const [propertyType, setPropertyType] = useState<'asking' | 'house' | 'flat' | null>(null)
+  const [aiSuggestedType, setAiSuggestedType] = useState<'house' | 'flat' | null>(null)
+  const [buildingAddress, setBuildingAddress] = useState<{
+    placeId: string
+    formatted: string
+    addressComponents: google.maps.GeocoderAddressComponent[]
+  } | null>(null)
 
   useEffect(() => {
     if (window.google?.maps?.places) {
@@ -169,65 +177,57 @@ export default function HomePage() {
     setLoading(true)
 
     try {
-      // Construct the full address query with properly formatted postcode
-      const fullAddress = `${houseNumber.trim()}, ${postcode}, UK`
+      // Use Geocoder API for more accurate postcode-based lookups
+      const geocoder = new google.maps.Geocoder()
 
-      // Use Google Places text search to find the address
-      const service = new google.maps.places.PlacesService(document.createElement('div'))
+      // Construct address with postcode emphasized
+      const fullAddress = `${houseNumber.trim()}, ${postcode}, United Kingdom`
 
-      // First, find the place
-      service.findPlaceFromQuery(
+      geocoder.geocode(
         {
-          query: fullAddress,
-          fields: ['place_id', 'formatted_address'],
+          address: fullAddress,
+          componentRestrictions: { country: 'GB', postalCode: postcode.replace(/\s/g, '') },
         },
         async (results, status) => {
-          if (status === google.maps.places.PlacesServiceStatus.OK && results && results[0]) {
-            const placeId = results[0].place_id
+          if (status === google.maps.GeocoderStatus.OK && results && results[0]) {
+            const result = results[0]
 
-            // Then get full details including address_components
-            service.getDetails(
-              {
-                placeId: placeId!,
-                fields: ['place_id', 'formatted_address', 'address_components'],
-              },
-              async (place, detailsStatus) => {
-                if (detailsStatus === google.maps.places.PlacesServiceStatus.OK && place) {
-                  try {
-                    const res = await fetch('/api/listings/find-or-create', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        placeId: place.place_id,
-                        formatted: place.formatted_address,
-                        addressComponents: place.address_components,
-                      }),
-                    })
+            // Build the building address with house number
+            let formattedAddress = result.formatted_address
 
-                    const data = await res.json()
+            // Add house number if not already included
+            if (!formattedAddress.toLowerCase().startsWith(houseNumber.trim().toLowerCase())) {
+              formattedAddress = `${houseNumber.trim()} ${formattedAddress}`
+            }
 
-                    if (data.success && data.listingId) {
-                      router.push(`/listing/${data.listingId}`)
-                    } else {
-                      alert('Could not find this address. Please try entering the full address.')
-                      resetSearch()
-                    }
-                  } catch (error) {
-                    console.error('Error finding/creating listing:', error)
-                    resetSearch()
-                  }
-                } else {
-                  alert('Could not find this address. Please try entering the full address.')
-                  resetSearch()
-                }
-                setLoading(false)
+            // Store building address
+            setBuildingAddress({
+              placeId: result.place_id,
+              formatted: formattedAddress,
+              addressComponents: result.address_components,
+            })
+
+            // Ask AI to determine property type
+            try {
+              const aiRes = await fetch('/api/property-type', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ address: formattedAddress }),
+              })
+              const aiData = await aiRes.json()
+              if (aiData.propertyType) {
+                setAiSuggestedType(aiData.propertyType)
               }
-            )
+            } catch {
+              // AI failed, will just ask user
+            }
+
+            setPropertyType('asking')
           } else {
             alert('Could not find this address. Please try entering the full address.')
             resetSearch()
-            setLoading(false)
           }
+          setLoading(false)
         }
       )
     } catch (error) {
@@ -241,10 +241,73 @@ export default function HomePage() {
     setPostcodeMode(false)
     setPostcode('')
     setHouseNumber('')
+    setFlatNumber('')
     setSearchValue('')
+    setBuildingAddress(null)
+    setPropertyType(null)
+    setAiSuggestedType(null)
     if (inputRef.current) {
       inputRef.current.value = ''
     }
+  }
+
+  const handleSelectHouse = () => {
+    setPropertyType('house')
+    submitAddress()
+  }
+
+  const handleSelectFlat = () => {
+    setPropertyType('flat')
+  }
+
+  const handleFlatSubmit = () => {
+    if (!flatNumber.trim()) return
+    submitAddress()
+  }
+
+  const submitAddress = async () => {
+    if (!buildingAddress) return
+
+    setLoading(true)
+
+    // Build final address with flat number if applicable
+    const finalAddress = flatNumber.trim()
+      ? `${flatNumber.trim()}, ${buildingAddress.formatted}`
+      : buildingAddress.formatted
+
+    try {
+      const res = await fetch('/api/listings/find-or-create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          placeId: buildingAddress.placeId,
+          formatted: finalAddress,
+          addressComponents: buildingAddress.addressComponents,
+          flatNumber: flatNumber.trim() || null,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (data.success && data.listingId) {
+        router.push(`/listing/${data.listingId}`)
+      } else {
+        alert('Something went wrong. Please try again.')
+        resetSearch()
+      }
+    } catch (error) {
+      console.error('Error finding/creating listing:', error)
+      resetSearch()
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRejectAddress = () => {
+    setBuildingAddress(null)
+    setPropertyType(null)
+    setAiSuggestedType(null)
+    setFlatNumber('')
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -273,7 +336,74 @@ export default function HomePage() {
             and see landlord responses
           </p>
 
-          {!postcodeMode ? (
+          {buildingAddress && propertyType === 'asking' ? (
+            <div className={styles.confirmContainer}>
+              <p className={styles.confirmLabel}>We found this address:</p>
+              <p className={styles.confirmAddress}>{buildingAddress.formatted}</p>
+              <p className={styles.propertyTypeQuestion}>
+                {aiSuggestedType
+                  ? `This looks like a ${aiSuggestedType}. Is that correct?`
+                  : 'Is this a house or a flat?'}
+              </p>
+              <div className={styles.confirmButtons}>
+                <button
+                  className={`${styles.confirmYes} ${aiSuggestedType === 'house' ? styles.suggested : ''}`}
+                  onClick={handleSelectHouse}
+                  disabled={loading}
+                >
+                  {loading && aiSuggestedType === 'house' ? '...' : 'House'}
+                </button>
+                <button
+                  className={`${styles.confirmYes} ${aiSuggestedType === 'flat' ? styles.suggested : ''}`}
+                  onClick={handleSelectFlat}
+                  disabled={loading}
+                >
+                  {loading && aiSuggestedType === 'flat' ? '...' : 'Flat'}
+                </button>
+              </div>
+              <button
+                className={styles.wrongAddressLink}
+                onClick={handleRejectAddress}
+                disabled={loading}
+              >
+                Wrong address? Try again
+              </button>
+            </div>
+          ) : buildingAddress && propertyType === 'flat' ? (
+            <div className={styles.confirmContainer}>
+              <p className={styles.confirmLabel}>Building:</p>
+              <p className={styles.confirmAddress}>{buildingAddress.formatted}</p>
+              <div className={styles.flatInputContainer}>
+                <input
+                  type="text"
+                  placeholder="Enter flat number (e.g. Flat 2, 1F1)"
+                  className={styles.flatInputField}
+                  value={flatNumber}
+                  onChange={(e) => setFlatNumber(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && flatNumber.trim()) {
+                      handleFlatSubmit()
+                    }
+                  }}
+                  autoFocus
+                />
+                <button
+                  className={styles.searchButton}
+                  onClick={handleFlatSubmit}
+                  disabled={loading || !flatNumber.trim()}
+                >
+                  {loading ? '...' : 'Continue'}
+                </button>
+              </div>
+              <button
+                className={styles.wrongAddressLink}
+                onClick={handleRejectAddress}
+                disabled={loading}
+              >
+                Start over
+              </button>
+            </div>
+          ) : !postcodeMode ? (
             <div className={styles.searchContainer}>
               <input
                 ref={inputRef}
@@ -305,7 +435,7 @@ export default function HomePage() {
                 <input
                   ref={houseNumberRef}
                   type="text"
-                  placeholder="House/flat number (e.g. 12 or Flat 3)"
+                  placeholder="Building number (e.g. 166)"
                   className={styles.searchInput}
                   disabled={loading}
                   value={houseNumber}

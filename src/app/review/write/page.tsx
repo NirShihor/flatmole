@@ -21,8 +21,8 @@ function WriteReviewContent() {
   const [displayName, setDisplayName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [isVerified, setIsVerified] = useState<boolean | null>(null)
-  const [checkingVerification, setCheckingVerification] = useState(true)
+  const [reviewSubmitted, setReviewSubmitted] = useState(false)
+  const [submittedReviewId, setSubmittedReviewId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!listingId) return
@@ -37,21 +37,6 @@ function WriteReviewContent() {
       .catch(console.error)
   }, [listingId])
 
-  useEffect(() => {
-    if (!listingId || status !== 'authenticated') {
-      setCheckingVerification(false)
-      return
-    }
-
-    fetch(`/api/verification?listingId=${listingId}`)
-      .then(res => res.json())
-      .then(data => {
-        setIsVerified(data.verified)
-      })
-      .catch(console.error)
-      .finally(() => setCheckingVerification(false))
-  }, [listingId, status])
-
   if (status === 'loading') {
     return <p>Loading...</p>
   }
@@ -63,6 +48,23 @@ function WriteReviewContent() {
         <p className={styles.message}>You need to be signed in to write a review.</p>
         <Link href={`/login?callbackUrl=/review/write?listingId=${listingId}`} className={styles.primaryButton}>
           Sign in
+        </Link>
+      </div>
+    )
+  }
+
+  const isEmailVerified = (session?.user as unknown as { isEmailVerified?: boolean })?.isEmailVerified
+
+  if (!isEmailVerified) {
+    return (
+      <div className={styles.card}>
+        <h1 className={styles.title}>Email verification required</h1>
+        <p className={styles.message}>
+          Please verify your email address before writing a review.
+          Check your inbox for the verification link.
+        </p>
+        <Link href={`/listing/${listingId}`} className={styles.secondaryButton}>
+          Back to listing
         </Link>
       </div>
     )
@@ -121,7 +123,9 @@ function WriteReviewContent() {
         return
       }
 
-      router.push(`/listing/${listingId}`)
+      // Review submitted - now show verification
+      setSubmittedReviewId(data.reviewId)
+      setReviewSubmitted(true)
     } catch {
       setError('An error occurred. Please try again.')
     } finally {
@@ -129,21 +133,29 @@ function WriteReviewContent() {
     }
   }
 
-  if (checkingVerification) {
-    return <p>Checking verification status...</p>
-  }
-
-  if (!isVerified && listing) {
+  // After review is submitted, show verification upload
+  if (reviewSubmitted && listing) {
     return (
       <div className={styles.card}>
-        <Link href={`/listing/${listingId}`} className={styles.backLink}>
-          ← Back to listing
-        </Link>
+        <div className={styles.successMessage}>
+          <div className={styles.successIcon}>✓</div>
+          <h2 className={styles.successTitle}>Review saved!</h2>
+          <p className={styles.successText}>
+            To publish your review, please verify you lived at this address.
+          </p>
+        </div>
         <VerificationUpload
           listingId={listingId!}
           address={listing.address.formatted}
-          onVerified={() => setIsVerified(true)}
+          reviewId={submittedReviewId}
+          onVerified={() => router.push(`/listing/${listingId}`)}
         />
+        <button
+          className={styles.skipLink}
+          onClick={() => router.push(`/listing/${listingId}`)}
+        >
+          Skip for now (review won&apos;t be visible)
+        </button>
       </div>
     )
   }

@@ -72,31 +72,12 @@ export async function POST(request: NextRequest) {
       content,
       anonymous: anonymous !== false,
       displayName: anonymous ? null : displayName || null,
-      status: 'approved',
+      status: 'pending_verification',
       createdAt: new Date(),
       updatedAt: new Date(),
     }
 
     const result = await db.collection('reviews').insertOne(review)
-
-    const reviews = await db.collection('reviews').find({
-      listingId: new ObjectId(listingId),
-      status: 'approved',
-    }).toArray()
-
-    const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0)
-    const averageRating = totalRating / reviews.length
-
-    await db.collection('listings').updateOne(
-      { _id: new ObjectId(listingId) },
-      {
-        $set: {
-          averageRating: Math.round(averageRating * 10) / 10,
-          reviewsCount: reviews.length,
-          updatedAt: new Date(),
-        },
-      }
-    )
 
     return NextResponse.json({
       success: true,

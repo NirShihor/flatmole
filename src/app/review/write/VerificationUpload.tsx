@@ -6,10 +6,11 @@ import styles from './write.module.css'
 interface VerificationUploadProps {
   listingId: string
   address: string
+  reviewId?: string | null
   onVerified: () => void
 }
 
-export default function VerificationUpload({ listingId, address, onVerified }: VerificationUploadProps) {
+export default function VerificationUpload({ listingId, address, reviewId, onVerified }: VerificationUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
@@ -59,6 +60,7 @@ export default function VerificationUpload({ listingId, address, onVerified }: V
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             listingId,
+            reviewId,
             documentData: base64,
             documentType: selectedFile.type,
             documentName: selectedFile.name,
@@ -92,7 +94,7 @@ export default function VerificationUpload({ listingId, address, onVerified }: V
     <div className={styles.verificationSection}>
       <h2 className={styles.verificationTitle}>Verify Your Tenancy</h2>
       <p className={styles.verificationDesc}>
-        To write a review, please upload a document proving you lived at:
+        Upload a document proving you lived at:
       </p>
       <p className={styles.verificationAddress}>{address}</p>
 
