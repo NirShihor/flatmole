@@ -40,13 +40,23 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date(),
     })
 
-    // Send verification email (don't block on failure)
-    sendVerificationEmail(email, verificationToken).catch(console.error)
+    console.log('[Signup] User created successfully:', { email, userId: result.insertedId.toString() })
+
+    // Send verification email
+    console.log('[Signup] Initiating verification email send...')
+    const emailResult = await sendVerificationEmail(email, verificationToken)
+
+    if (emailResult.success) {
+      console.log('[Signup] Verification email sent successfully to:', email)
+    } else {
+      console.error('[Signup] Failed to send verification email to:', email, emailResult.error)
+    }
 
     return NextResponse.json({
       success: true,
       message: 'Account created. Please check your email to verify your account.',
       userId: result.insertedId.toString(),
+      emailSent: emailResult.success,
     })
   } catch (error) {
     console.error('Signup error:', error)

@@ -1,14 +1,16 @@
 'use client'
 
 import { Suspense, useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 import styles from './verify-email.module.css'
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const token = searchParams.get('token')
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
+  const [status, setStatus] = useState<'loading' | 'success' | 'logging-in' | 'error'>('loading')
   const [message, setMessage] = useState('')
 
   useEffect(() => {
@@ -20,10 +22,28 @@ function VerifyEmailContent() {
 
     fetch(`/api/auth/verify-email?token=${token}`)
       .then(res => res.json())
-      .then(data => {
+      .then(async (data) => {
         if (data.success) {
-          setStatus('success')
           setMessage(data.alreadyVerified ? 'Your email is already verified!' : 'Your email has been verified!')
+
+          // Auto-login if we have the token
+          if (data.autoLoginToken && data.email) {
+            setStatus('logging-in')
+            const result = await signIn('credentials', {
+              email: data.email,
+              autoLoginToken: data.autoLoginToken,
+              redirect: false,
+            })
+
+            if (result?.ok) {
+              router.push('/?verified=true')
+            } else {
+              // If auto-login fails, show success with login link
+              setStatus('success')
+            }
+          } else {
+            setStatus('success')
+          }
         } else {
           setStatus('error')
           setMessage(data.message || 'Verification failed')
@@ -33,7 +53,7 @@ function VerifyEmailContent() {
         setStatus('error')
         setMessage('An error occurred during verification')
       })
-  }, [token])
+  }, [token, router])
 
   return (
     <div className={styles.card}>
@@ -41,6 +61,13 @@ function VerifyEmailContent() {
         <>
           <div className={styles.spinner} />
           <h1 className={styles.title}>Verifying your email...</h1>
+        </>
+      )}
+
+      {status === 'logging-in' && (
+        <>
+          <div className={styles.spinner} />
+          <h1 className={styles.title}>Logging you in...</h1>
         </>
       )}
 
