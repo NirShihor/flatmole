@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import Image from 'next/image'
@@ -66,7 +66,7 @@ function StarRating({ rating }: { rating: number }) {
   )
 }
 
-export default function HomePage() {
+function HomePageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { data: session } = useSession()
@@ -553,5 +553,13 @@ export default function HomePage() {
         </section>
       </main>
     </div>
+  )
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className={styles.container} />}>
+      <HomePageContent />
+    </Suspense>
   )
 }
