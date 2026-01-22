@@ -38,14 +38,16 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  console.log('[Webhook] Received event:', event.type)
+
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object
 
     const listingId = session.metadata?.listingId
     const userId = session.metadata?.userId
 
-    if (!listingId || !userId) {
-      console.error('Missing metadata in checkout session:', session.id)
+    if (!listingId) {
+      console.error('[Webhook] Missing listingId in checkout session:', session.id)
       return NextResponse.json({ received: true })
     }
 
@@ -53,12 +55,22 @@ export async function POST(request: NextRequest) {
       const client = await clientPromise
       const db = client.db()
 
+      // Idempotency check - prevent duplicate processing
+      const existingPayment = await db.collection('payments').findOne({
+        stripeSessionId: session.id,
+      })
+
+      if (existingPayment) {
+        console.log('[Webhook] Payment already processed:', session.id)
+        return NextResponse.json({ received: true })
+      }
+
       await db.collection('listings').updateOne(
         { _id: new ObjectId(listingId) },
         {
           $set: {
             hasPaidFeatures: true,
-            paidAt: new Date(),
+            paidFeaturesEnabledAt: new Date(),
             stripeSessionId: session.id,
             updatedAt: new Date(),
           },
@@ -67,17 +79,19 @@ export async function POST(request: NextRequest) {
 
       await db.collection('payments').insertOne({
         listingId: new ObjectId(listingId),
-        userId: new ObjectId(userId),
+        userId: userId ? new ObjectId(userId) : null,
         stripeSessionId: session.id,
+        stripePaymentIntentId: session.payment_intent,
         amount: session.amount_total,
         currency: session.currency,
         status: 'completed',
+        source: 'webhook',
         createdAt: new Date(),
       })
 
-      console.log(`Payment successful for listing ${listingId}`)
+      console.log('[Webhook] Payment successful for listing:', listingId)
     } catch (error) {
-      console.error('Error processing payment:', error)
+      console.error('[Webhook] Error processing payment:', error)
       return NextResponse.json(
         { error: 'Failed to process payment' },
         { status: 500 }
