@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import crypto from 'crypto'
 import clientPromise from '@/lib/mongoClient'
 
 export async function GET(request: NextRequest) {
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
         success: true,
         message: 'Email already verified',
         alreadyVerified: true,
+        email: user.email,
       })
     }
 
@@ -42,11 +44,17 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Generate auto-login token (valid for 5 minutes)
+    const autoLoginToken = crypto.randomBytes(32).toString('hex')
+    const autoLoginExpiry = new Date(Date.now() + 5 * 60 * 1000)
+
     await db.collection('users').updateOne(
       { _id: user._id },
       {
         $set: {
           emailVerified: true,
+          autoLoginToken,
+          autoLoginTokenExpiry: autoLoginExpiry,
           updatedAt: new Date(),
         },
         $unset: {
@@ -59,6 +67,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Email verified successfully',
+      email: user.email,
+      autoLoginToken,
     })
   } catch (error) {
     console.error('Email verification error:', error)

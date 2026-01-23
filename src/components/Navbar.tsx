@@ -2,11 +2,18 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import styles from './Navbar.module.css'
 
 export default function Navbar() {
   const { data: session, status } = useSession()
+  const pathname = usePathname()
+
+  // Hide navbar on homepage (has its own navigation)
+  if (pathname === '/') {
+    return null
+  }
 
   return (
     <nav className={styles.navbar}>

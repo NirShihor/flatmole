@@ -19,8 +19,15 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
 export async function sendVerificationEmail(email: string, token: string) {
   const verificationUrl = `${APP_URL}/verify-email?token=${token}`
 
+  console.log('[Email] Attempting to send verification email:', {
+    to: email,
+    from: FROM_EMAIL,
+    appUrl: APP_URL,
+    hasApiKey: !!process.env.RESEND_API_KEY,
+  })
+
   try {
-    await getResend().emails.send({
+    const result = await getResend().emails.send({
       from: FROM_EMAIL,
       to: email,
       subject: 'Verify your email - FlatMole',
@@ -49,9 +56,14 @@ export async function sendVerificationEmail(email: string, token: string) {
         </div>
       `,
     })
+    console.log('[Email] SUCCESS - Verification email sent:', { to: email, result })
     return { success: true }
   } catch (error) {
-    console.error('Failed to send verification email:', error)
+    console.error('[Email] FAILED - Could not send verification email:', {
+      to: email,
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+    })
     return { success: false, error }
   }
 }
