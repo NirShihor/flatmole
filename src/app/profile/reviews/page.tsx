@@ -22,6 +22,9 @@ interface Review {
 export default function MyReviewsPage() {
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState<{ id: string; message: string } | null>(null)
 
   useEffect(() => {
     fetch('/api/profile/reviews')
@@ -34,6 +37,28 @@ export default function MyReviewsPage() {
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [])
+
+  const handleDelete = async (reviewId: string) => {
+    setDeletingId(reviewId)
+    setDeleteError(null)
+
+    try {
+      const res = await fetch(`/api/reviews/${reviewId}`, { method: 'DELETE' })
+      const data = await res.json()
+
+      if (!data.success) {
+        setDeleteError({ id: reviewId, message: data.message || 'Failed to delete review' })
+        return
+      }
+
+      setReviews(prev => prev.filter(review => review._id !== reviewId))
+      setConfirmingId(null)
+    } catch {
+      setDeleteError({ id: reviewId, message: 'Failed to delete review' })
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   if (loading) {
     return <p>Loading...</p>
@@ -66,9 +91,49 @@ export default function MyReviewsPage() {
                 {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
               </div>
               <p className={styles.content}>{review.content}</p>
-              <div className={styles.meta}>
-                Posted as: {review.anonymous ? 'Anonymous' : review.displayName}
+              <div className={styles.footer}>
+                <div className={styles.meta}>
+                  Posted as: {review.anonymous ? 'Anonymous' : review.displayName}
+                </div>
+                {confirmingId === review._id ? (
+                  <div className={styles.confirm}>
+                    <span className={styles.confirmText}>Delete this review permanently?</span>
+                    <button
+                      type="button"
+                      className={styles.dangerButton}
+                      onClick={() => handleDelete(review._id)}
+                      disabled={deletingId === review._id}
+                    >
+                      {deletingId === review._id ? 'Deleting...' : 'Delete'}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.cancelButton}
+                      onClick={() => {
+                        setConfirmingId(null)
+                        setDeleteError(null)
+                      }}
+                      disabled={deletingId === review._id}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.deleteLink}
+                    onClick={() => {
+                      setConfirmingId(review._id)
+                      setDeleteError(null)
+                    }}
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
+              {deleteError?.id === review._id && (
+                <p className={styles.error}>{deleteError.message}</p>
+              )}
             </div>
           ))}
         </div>
